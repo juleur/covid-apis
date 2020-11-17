@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/gofiber/cors"
 	fiber "github.com/gofiber/fiber/v2"
 )
 
@@ -28,17 +27,15 @@ func main() {
 	app := fiber.New(fiber.Config{
 		GETOnly: true,
 	})
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"https://www.coro21-jl.xyz"},
-		AllowHeaders: []string{"Origin, Content-Type, Accept"},
-	}))
 
 	app.Get("/geojson_departements", func(c *fiber.Ctx) error {
 		c.Set("Content-Type", "application/json")
+		c.Set("Access-Control-Allow-Origin", "https://www.coro21-jl.xyz")
 		return c.Send(geojson)
 	})
 
 	app.Get("/covid-data", func(c *fiber.Ctx) error {
+		c.Set("Access-Control-Allow-Origin", "https://www.coro21-jl.xyz")
 		return c.JSON(covidStore.LastSevenDataDays)
 	})
 
