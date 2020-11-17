@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gofiber/cors v0.2.2
 	github.com/gofiber/fiber/v2 v2.2.0
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/kr/text v0.2.0 // indirect
