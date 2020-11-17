@@ -1,7 +1,7 @@
 import type CovidReport from '../models/covid-data.model';
 import type DepartmentDelimit from '../models/department-delimit.model';
 
-let proxy_on: boolean = true;
+let proxy_on: boolean = false;
 let BACKEND_URL: string
 
 if (proxy_on) {
