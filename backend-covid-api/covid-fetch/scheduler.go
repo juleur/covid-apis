@@ -17,11 +17,26 @@ var CovidStore *models.CovidStore
 func fetchCovidDataGouvFr(datetime string) []models.CovidReport {
 	covidReport := []models.CovidReport{}
 	url := fmt.Sprintf("https://dashboard.covid19.data.gouv.fr/data/date-%s.json", datetime)
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return covidReport
 	}
+
+	// il se peut que les informations ne soient pas mises à jour toutes les 24h
+	if resp.StatusCode == 404 {
+		// 119 départements
+		for i := 0; i < 119; i++ {
+			cr := models.CovidReport{
+				Date: datetime,
+			}
+			covidReport = append(covidReport, cr)
+		}
+		return covidReport
+	}
+
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return covidReport
@@ -45,7 +60,7 @@ func fetchLastSevenDaysCovidData() chan []models.CovidReport {
 	return ch
 }
 
-func refreshData(covStore models.CovidStore) {
+func refreshData(covStore *models.CovidStore) {
 	oneDayBefore := time.Now().Add(time.Duration(-24) * time.Hour).Format("2006-01-02")
 	data := fetchCovidDataGouvFr(oneDayBefore)
 
@@ -53,12 +68,10 @@ func refreshData(covStore models.CovidStore) {
 	covStore.Lock()
 	defer covStore.Unlock()
 
-	_, exists := covStore.LastSevenDataDays[lastCurrentTime]
-	if exists {
-		delete(covStore.LastSevenDataDays, lastCurrentTime)
-	} else {
+	if _, exists := covStore.LastSevenDataDays[lastCurrentTime]; !exists {
 		return
 	}
+	delete(covStore.LastSevenDataDays, lastCurrentTime)
 	datetime := data[0].Date
 	covStore.LastSevenDataDays[datetime] = data
 }
@@ -74,9 +87,10 @@ func CovidDataBackup() {
 	CovidStore = &covStore
 
 	go func() {
-		if err := gocron.Every(1).Day().At("6:00").Do(refreshData, covStore); err != nil {
+		if err := gocron.Every(1).Day().At("6:00").Do(refreshData, &covStore); err != nil {
 			log.Println("error on job refreshing")
 		}
 		<-gocron.Start()
 	}()
 }
+
